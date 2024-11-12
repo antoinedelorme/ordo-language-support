@@ -22,6 +22,7 @@ An Ordo program is structured as a JSON-like array, where each element is a **Ph
 
 ### Example Program
 
+```plaintext
 [
   {
     phase1: {
@@ -40,6 +41,7 @@ An Ordo program is structured as a JSON-like array, where each element is a **Ph
     }
   }
 ]
+```
 
 In this example:
 - **Phase 1**: Tasks `SP500`, `SP500Index`, `initialAllocation`, and `riskAnalysis` execute in parallel.
@@ -57,7 +59,9 @@ An Ordo program has two main parts:
 
 Each task within a phase follows this format:
 
+```
 result_name: object.method(input_1, input_2, ...)
+```
 
 where:
 - `result_name` is the output variable.
@@ -100,6 +104,7 @@ In this example:
 
 The following example shows two sequential phases with parallel tasks within each phase:
 
+```plaintext
 [
   {
     phase1: {
@@ -118,6 +123,7 @@ The following example shows two sequential phases with parallel tasks within eac
     }
   }
 ]
+```
 
 ## Conclusion
 
