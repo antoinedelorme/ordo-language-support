@@ -84,7 +84,8 @@ An example header format is as follows:
 ComputeEngine: {
   getUniverse: String -> Universe,
   getTrackingError: Allocation, Index -> Float,
-  allocate: Universe, Index -> Allocation
+  allocate: Universe, Index -> Allocation,
+  optimize: Allocation, Float -> Allocation
 },
 Allocation: {
   rank: _ -> Allocation,
@@ -94,17 +95,28 @@ Allocation: {
 RiskManager: {
   calculateVaR: Allocation -> Float,
   analyzeRisk: Allocation, MarketData -> RiskReport
+},
+DataLoader: {
+  getUniverse: String -> Universe,
+  getAllocation: String -> Allocation,
+  loadMarketData: String -> MarketData
+},
+Orchestrator: {
+  rebalance: Allocation -> Allocation,
+  finalizeReport: Allocation -> Report
 }
 ```
 
 In this example:
-- **`ComputeEngine`** provides methods like `getUniverse`, which takes a string and returns a `Universe`, and `getTrackingError`, which takes an `Allocation` and an `Index` and returns a `float`.
-- **`Allocation`** includes methods for ranking and selecting assets, such as `rank`, `topPercentile`, and `merge`.
-- **`RiskManager`** includes risk-related methods, such as `calculateVaR` to compute Value at Risk (VaR) and `analyzeRisk` to generate a risk report.
+- **`ComputeEngine`** provides methods for creating and optimizing allocations, and calculating tracking errors.
+- **`Allocation`** includes methods for ranking, selecting top assets, and merging allocations.
+- **`RiskManager`** includes risk-related methods, such as `calculateVaR` and `analyzeRisk`.
+- **`DataLoader`** fetches universes, allocations, and market data.
+- **`Orchestrator`** manages rebalancing and report generation.
 
-## Example of Sequential and Parallel Execution with DataLoader Class
+## Example of Sequential and Parallel Execution with Financial Logic
 
-Below is a complete example that includes the `DataLoader` class and a pipeline with three phases, showing how to instantiate objects from classes and use them in each phase.
+Below is a self-consistent, realistic example that includes the `DataLoader` and `Orchestrator` classes, with financial logic. This pipeline performs tasks like loading market data, calculating allocations, and generating a risk report.
 
 ```plaintext
 header: {
@@ -128,6 +140,10 @@ header: {
     getUniverse: String -> Universe,
     getAllocation: String -> Allocation,
     loadMarketData: String -> MarketData
+  },
+  Orchestrator: {
+    rebalance: Allocation -> Allocation,
+    finalizeReport: Allocation -> Report
   }
 }
 
@@ -135,7 +151,7 @@ instances: {
   data_loader: DataLoader,
   compute_engine: ComputeEngine,
   risk_manager: RiskManager,
-  orchestrator: ComputeEngine
+  orchestrator: Orchestrator
 }
 
 pipeline: [
@@ -161,16 +177,17 @@ pipeline: [
       rankedAllocation: initialAllocation.rank(),
       topAllocation: rankedAllocation.topPercentile(0.10),
       mergedAllocation: compute_engine.allocate(SP500, SP500Index).merge(topAllocation, initialAllocation),
-      finalRebalance: orchestrator.rebalance(optimizedAllocation)
+      finalRebalance: orchestrator.rebalance(optimizedAllocation),
+      report: orchestrator.finalizeReport(finalRebalance)
     }
   }
 ]
 ```
 
-In this extended example:
-- **DataLoader** class fetches the universe and allocation data in Phase 1 and loads market data in Phase 2.
-- **RiskManager** and **ComputeEngine** manage allocations and risk calculations across phases.
-- **Orchestrator** handles rebalancing in Phase 3 after optimizations.
+In this example:
+- **Phase 1**: Initializes SP500 universe and performs a basic allocation and risk analysis.
+- **Phase 2**: Loads market data and performs risk analysis based on market conditions.
+- **Phase 3**: Finalizes allocation by ranking and selecting top assets, merging allocations, rebalancing, and generating a final report.
 
 ## Conclusion
 
