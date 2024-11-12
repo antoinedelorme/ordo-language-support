@@ -7,6 +7,8 @@
 
 Ordo Language Support is a VS Code extension for the Ordo programming language, designed to specify complex task pipelines with sequential and parallel execution across multiple phases. Each phase executes sequentially, while tasks within a phase execute in parallel unless dependencies specify otherwise. The Ordo language uses a JSON-like syntax for readability and ease of use.
 
+**Note**: Ordo is not intended as a finalized language. It’s a versatile, human-readable blueprint for designing task pipelines, adaptable to multiple programming languages. Ordo’s purpose is to provide a clear, structured framework for defining objects and their interactions in any system that supports such constructs. The language can be implemented differently across systems as long as it can represent objects, methods, and task sequencing. This flexibility makes Ordo ideal for creating cross-functional pipeline blueprints.
+
 ## Key Features
 
 - **Sequential and Parallel Execution**: Ordo enables structured task execution across sequential phases, with parallelism for tasks within each phase.
@@ -78,7 +80,7 @@ The header in an Ordo program specifies objects, methods, and their expected inp
 
 An example header format is as follows:
 
-```
+```plaintext
 ComputeEngine: {
   getUniverse: String -> Universe,
   getTrackingError: Allocation, Index -> Float,
@@ -100,33 +102,80 @@ In this example:
 - **`Allocation`** includes methods for ranking and selecting assets, such as `rank`, `topPercentile`, and `merge`.
 - **`RiskManager`** includes risk-related methods, such as `calculateVaR` to compute Value at Risk (VaR) and `analyzeRisk` to generate a risk report.
 
-## Example of Sequential and Parallel Execution
+## Example of Sequential and Parallel Execution with DataLoader Class
 
-The following example shows two sequential phases with parallel tasks within each phase:
+Below is a complete example that includes the `DataLoader` class and a pipeline with three phases, showing how to instantiate objects from classes and use them in each phase.
 
 ```plaintext
-[
+header: {
+  ComputeEngine: {
+    getUniverse: String -> Universe,
+    getTrackingError: Allocation, Index -> Float,
+    allocate: Universe, Index -> Allocation,
+    value: Allocation -> Valuation,
+    optimize: Allocation, Float -> Allocation
+  },
+  Allocation: {
+    rank: _ -> Allocation,
+    topPercentile: Float -> Allocation,
+    merge: Allocation, Allocation -> Allocation
+  },
+  RiskManager: {
+    calculateVaR: Allocation -> Float,
+    analyzeRisk: Allocation, MarketData -> RiskReport
+  },
+  DataLoader: {
+    getUniverse: String -> Universe,
+    getAllocation: String -> Allocation,
+    loadMarketData: String -> MarketData
+  }
+}
+
+instances: {
+  data_loader: DataLoader,
+  compute_engine: ComputeEngine,
+  risk_manager: RiskManager,
+  orchestrator: ComputeEngine
+}
+
+pipeline: [
   {
     phase1: {
-      SP500: data_loader.getUniverse(SP500),
-      SP500Index: data_loader.getAllocation(SP500),
+      SP500: data_loader.getUniverse("SP500"),
+      SP500Index: data_loader.getAllocation("SP500"),
       initialAllocation: compute_engine.allocate(SP500, SP500Index),
-      riskAnalysis: compute_engine.risk(SP500)
+      riskAnalysis: risk_manager.calculateVaR(initialAllocation)
     }
   },
   {
     phase2: {
+      marketData: data_loader.loadMarketData("SP500"),
+      analyzedRisk: risk_manager.analyzeRisk(initialAllocation, marketData),
       riskVar: riskAnalysis.getVar(),
-      optimizedAllocation: compute_engine.optimise(initialAllocation, riskVar),
-      valuation: compute_engine.value(optimizedAllocation),
-      rebalanceTask: orchestrator.rebalance(optimizedAllocation)
+      optimizedAllocation: compute_engine.optimize(initialAllocation, riskVar),
+      valuation: compute_engine.value(optimizedAllocation)
+    }
+  },
+  {
+    phase3: {
+      rankedAllocation: initialAllocation.rank(),
+      topAllocation: rankedAllocation.topPercentile(0.10),
+      mergedAllocation: compute_engine.allocate(SP500, SP500Index).merge(topAllocation, initialAllocation),
+      finalRebalance: orchestrator.rebalance(optimizedAllocation)
     }
   }
 ]
 ```
 
+In this extended example:
+- **DataLoader** class fetches the universe and allocation data in Phase 1 and loads market data in Phase 2.
+- **RiskManager** and **ComputeEngine** manage allocations and risk calculations across phases.
+- **Orchestrator** handles rebalancing in Phase 3 after optimizations.
+
 ## Conclusion
 
 Ordo is a structured language for defining task pipelines, supporting both sequential and parallel execution. Its syntax allows for compact, readable definitions, making it ideal for workflows that benefit from efficient task management across phases.
+
+Ordo is intended to serve as a flexible blueprint for various programming environments. Its design allows for customization and adaptation across different languages and systems, making it versatile for both human readability and computational efficiency.
 
 This extension provides syntax highlighting, IntelliSense, and error checking, making it easy to work with Ordo programs in VS Code.

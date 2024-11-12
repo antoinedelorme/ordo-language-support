@@ -12,3 +12,22 @@ RiskManager: {
   calculateVaR: Allocation -> Float,
   analyzeRisk: Allocation, MarketData -> RiskReport
 }
+
+[
+  {
+    phase1: {
+      SP500: data_loader.getUniverse(SP500),
+      SP500Index: data_loader.getAllocation(SP500),
+      initialAllocation: compute_engine.allocate(SP500, SP500Index),
+      riskAnalysis: compute_engine.risk(SP500)
+    }
+  },
+  {
+    phase2: {
+      riskVar: riskAnalysis.getVar(),
+      optimizedAllocation: compute_engine.optimise(initialAllocation, riskVar),
+      valuation: compute_engine.value(optimizedAllocation),
+      rebalanceTask: orchestrator.rebalance(optimizedAllocation)
+    }
+  }
+]
