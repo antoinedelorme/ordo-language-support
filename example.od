@@ -1,0 +1,14 @@
+ComputeEngine: {
+  getUniverse: String -> Universe,
+  getTrackingError: Allocation, Index -> Float,
+  allocate: Universe, Index -> Allocation
+},
+Allocation: {
+  rank: _ -> Allocation,
+  topPercentile: Float -> Allocation,
+  merge: Allocation, Allocation -> Allocation
+},
+RiskManager: {
+  calculateVaR: Allocation -> Float,
+  analyzeRisk: Allocation, MarketData -> RiskReport
+}

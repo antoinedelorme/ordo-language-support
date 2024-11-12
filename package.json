@@ -1,47 +1,49 @@
 {
-  "name": "ordo-language-support",
-  "displayName": "Ordo Language Support",
-  "description": "Provides syntax highlighting, IntelliSense, and validation for the Ordo language.",
-  "version": "1.0.0",
-  "engines": { "vscode": "^1.75.0" },
-  "categories": ["Programming Languages"],
-  "activationEvents": ["onLanguage:ordo"],
-  "main": "./src/extension.js",
-  "contributes": {
+    "name": "ordo-language-support",
+    "displayName": "Ordo Language Support",
+    "description": "Provides syntax highlighting, IntelliSense, and validation for the Ordo language.",
+    "version": "1.0.0",
+    "publisher": "your-publisher-name",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/antoinedelorme/ordo-language-support.git"
+    },
+    "engines": {
+      "vscode": "^1.75.0"
+    },
+    "categories": ["Programming Languages"],
+    "activationEvents": ["onLanguage:ordo"],
+    "main": "./src/extension.js",
+    "contributes": {
       "languages": [
-          {
-              "id": "ordo",
-              "aliases": ["Ordo", "ordo"],
-              "extensions": [".ordo"],
-              "configuration": "./language-configuration.json"
-          }
+        {
+          "id": "ordo",
+          "aliases": ["Ordo", "ordo"],
+          "extensions": [".ordo"],
+          "configuration": "./language-configuration.json"
+        }
       ],
       "grammars": [
-          {
-              "language": "ordo",
-              "scopeName": "source.ordo",
-              "path": "./syntaxes/ordo.tmLanguage.json"
-          }
-      ],
-      "jsonValidation": [
-          {
-              "fileMatch": ["*.ordo"],
-              "url": "./pipeline-schema.json"
-          }
+        {
+          "language": "ordo",
+          "scopeName": "source.ordo",
+          "path": "./syntaxes/ordo.tmLanguage.json"
+        }
       ]
-  },
-  "scripts": {
+    },
+    "scripts": {
+
       "package": "vsce package",
       "install-client": "npm install vscode-languageclient",
       "install-server": "npm install vscode-languageserver"
-  },
-  "dependencies": {
+    },
+    "dependencies": {
       "vscode-languageclient": "^8.0.0",
       "vscode-languageserver": "^7.0.0"
-  },
-  "repository": {
-  "type": "git",
-  "url": "https://github.com/antoinedelorme/ordo-language-support.git"
-}
-
-}
+    },
+    "devDependencies": {
+      "vsce": "^2.5.0"
+    },
+    "license": "MIT"
+  }
+  

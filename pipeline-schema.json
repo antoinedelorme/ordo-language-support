@@ -4,14 +4,30 @@
     "properties": {
         "header": {
             "type": "object",
-            "properties": {
-                "objects": { "type": "array" },
-                "methods": { "type": "array" }
-            }
+            "patternProperties": {
+                "^[a-zA-Z_][a-zA-Z0-9_]*$": {  
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-zA-Z_][a-zA-Z0-9_]*$": {  
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
         },
         "pipeline": {
             "type": "array",
-            "items": { "type": "object" }
+            "items": {
+                "type": "object",
+                "patternProperties": {
+                    "^[a-zA-Z_][a-zA-Z0-9_]*$": {  
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            }
         }
     }
 }
