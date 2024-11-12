@@ -70,28 +70,31 @@ where:
 
 ### Header: Object and Method Definitions
 
-The header in an Ordo program specifies objects, methods, and their expected input/output types. It follows this format:
+The header in an Ordo program specifies objects, methods, and their expected input/output types in a structured format, allowing for complex interactions and functionality.
 
-object_name: ClassName
-ClassName.method_name: InputType(s) -> OutputType
+An example header format is as follows:
 
-For example:
-
-{
-  "header": {
-    "objects": [
-      { "object_name": "compute_engine", "class": "ComputeEngine" },
-      { "object_name": "data_loader", "class": "DataLoader" }
-    ],
-    "methods": [
-      { "class": "ComputeEngine", "method_name": "value", "input_types": ["Allocation"], "output_type": "Valuation" },
-      { "class": "ComputeEngine", "method_name": "risk", "input_types": ["Universe"], "output_type": "float" }
-    ]
-  }
+```
+ComputeEngine: {
+  getUniverse: string -> Universe,
+  getTrackingError: Allocation, Index -> float,
+  allocate: Universe, Index -> Allocation
+},
+Allocation: {
+  rank: _ -> Allocation,
+  topPercentile: float -> Allocation,
+  merge: Allocation, Allocation -> Allocation
+},
+RiskManager: {
+  calculateVaR: Allocation -> float,
+  analyzeRisk: Allocation, MarketData -> RiskReport
 }
+```
 
 In this example:
-- The `ComputeEngine` object has methods `value` and `risk`, each with specified input and output types.
+- **`ComputeEngine`** provides methods like `getUniverse`, which takes a string and returns a `Universe`, and `getTrackingError`, which takes an `Allocation` and an `Index` and returns a `float`.
+- **`Allocation`** includes methods for ranking and selecting assets, such as `rank`, `topPercentile`, and `merge`.
+- **`RiskManager`** includes risk-related methods, such as `calculateVaR` to compute Value at Risk (VaR) and `analyzeRisk` to generate a risk report.
 
 ## Example of Sequential and Parallel Execution
 
