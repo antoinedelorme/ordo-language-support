@@ -26,8 +26,8 @@ An Ordo program is structured as a JSON-like array, where each element is a **Ph
 [
   {
     phase1: {
-      SP500: data_loader.getUniverse(SP500),
-      SP500Index: data_loader.getAllocation(SP500),
+      SP500: data_loader.getUniverse('SP500'),
+      SP500Index: data_loader.getAllocation('SP500'),
       initialAllocation: compute_engine.allocate(SP500, SP500Index),
       riskAnalysis: compute_engine.risk(SP500)
     }
@@ -80,17 +80,17 @@ An example header format is as follows:
 
 ```
 ComputeEngine: {
-  getUniverse: string -> Universe,
-  getTrackingError: Allocation, Index -> float,
+  getUniverse: String -> Universe,
+  getTrackingError: Allocation, Index -> Float,
   allocate: Universe, Index -> Allocation
 },
 Allocation: {
   rank: _ -> Allocation,
-  topPercentile: float -> Allocation,
+  topPercentile: Float -> Allocation,
   merge: Allocation, Allocation -> Allocation
 },
 RiskManager: {
-  calculateVaR: Allocation -> float,
+  calculateVaR: Allocation -> Float,
   analyzeRisk: Allocation, MarketData -> RiskReport
 }
 ```
