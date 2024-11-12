@@ -1,0 +1,9 @@
+{
+  "scopeName": "source.ordo",
+  "patterns": [
+      { "name": "keyword.control.ordo", "match": "\\b(phase1|phase2)\\b" },
+      { "name": "entity.name.function.ordo", "match": "\\b(getUniverse|getAllocation|allocate|risk|getVar|optimise|value|rebalance)\\b" },
+      { "name": "variable.language.ordo", "match": "\\b(SP500|SP500Index|initialAllocation|riskAnalysis)\\b" }
+  ],
+  "repository": {}
+}
