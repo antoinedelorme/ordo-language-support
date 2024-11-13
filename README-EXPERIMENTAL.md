@@ -89,7 +89,6 @@ This example shows a backtesting pipeline with sequential rebalancing and final 
 
   pipelineLibrary: {
     MONTHLY_EQUAL_WEIGHT: {
-      observationTime: rebalancingDate,
       universe: data_loader.getUniverseFromTickers([AAPL, GOOGLE]),
       enrichedUniverse: data_loader.getStatistics(universe, [Price]),
       targetAllocation: compute_engine.getEqualWeight(enrichedUniverse)
