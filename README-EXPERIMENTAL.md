@@ -1,198 +1,124 @@
 
-# OrdoLang: A Time Series-Centric Workflow Language
+# Ordo Language Support
 
 **Date**: 2024-11-12
 
 ## Overview
 
-**OrdoLang** is an experimental programming language designed to specify complex task pipelines with sequential and parallel execution across multiple phases, all within a JSON-like syntax. OrdoLang’s JSON-based structure provides an intuitive way to organize workflows, where lists (`[]`) indicate **sequential execution** and objects (`{}`) allow **parallel execution** of tasks, automatically resolving dependencies within each phase. This design is ideal for time series-based applications where tasks require bo...
+Ordo Language Support is a VS Code extension for the Ordo programming language, designed to specify complex task pipelines using an acyclic graph structure with sequential and parallel execution across multiple phases. Each phase executes sequentially, while tasks within each phase can execute in parallel unless dependencies specify otherwise. Ordo's JSON-like syntax promotes readability and simplifies task orchestration.
 
-**Note**: OrdoLang serves as a flexible, human-readable blueprint for designing task pipelines, adaptable to multiple programming languages. It provides a clear framework for defining objects, methods, and task sequencing, making it ideal for creating cross-functional pipeline blueprints.
+> **Note**: Ordo is a versatile, human-readable blueprint for designing task pipelines. It is intended to be adaptable across different programming languages, serving as a structured framework to define objects and their interactions. This design flexibility makes Ordo ideal for cross-functional pipeline blueprints in various systems.
 
 ## Key Features
 
-- **Time Series-Centric**: All objects can be transformed into time series (`Series<Object>`), allowing for consistent and powerful time-based operations.
-- **Vectorizable Objects**: Certain objects support vectorized operations, enabling efficient computations over entire time series without explicit iteration.
-- **Sequential and Parallel Execution**: Structured task execution with sequential execution in lists (`[]`) and parallelism within objects (`{}`) in each phase.
-- **Pipeline Definitions (Computational Graphs)**: Define reusable pipelines (graphs) that can be invoked within other tasks, similar to computational graphs in data processing frameworks.
-- **Conditional Execution**: Tasks can be conditionally executed based on indicators or the results of other tasks, using the primitive `conditional` function within the JSON-like syntax.
-- **Indicators**: Compute indicators that influence execution flow, facilitating decision-making in workflows.
-- **Scheduling**: Tasks can be scheduled to run at specific times or intervals, enabling time-based workflows.
-- **Header for Object and Method Definitions**: Clearly define objects, methods, and their expected input/output types, including time series transformations.
-- **Dynamic Scoping and Data Flow**: Variables defined in one phase are accessible in subsequent phases, allowing for efficient data flow.
+- **Acyclic Graph Structure**: Ordo now supports acyclic graph pipelines, with the ability to define recursive tasks for sequential or parallel execution over scheduled dates.
+- **Sequential and Parallel Execution**: Tasks can execute in parallel within each phase, while phases themselves execute sequentially. `generateSequentialTask` supports date-specific, time-sensitive pipelines that depend on prior executions.
+- **Dynamic Scoping Across Phases**: Variables defined in one phase are accessible in subsequent phases, allowing efficient data flow across phases.
+- **Entry Point Specification**: Ordo programs now include an `entryPoint`, indicating the main pipeline for execution, providing flexibility in launching complex workflows.
 
 ## Language Overview
 
-An OrdoLang program is structured as a JSON-like array, where each element is a **phase** represented as an object with the phase name as the key.
+An Ordo program consists of a **Header** and a **Pipeline Library**:
 
-- **Phases**: Execute sequentially from the first to the last in the array (`[]`).
-- **Tasks**: Execute in parallel within each phase (`{}`) unless dependencies specify otherwise.
-- **Pipeline Definitions**: Reusable pipelines (graphs) can be defined and invoked within other tasks.
-- **Time Series Operations**: Objects can be transformed into `Series<Object>`, supporting vectorized operations over time.
-- **Conditional Execution**: Implemented using the primitive `conditional(indicator, task_if_true, task_if_false)`.
-- **Scheduling**: Defined within tasks using a `schedule` property.
-- **Indicators**: Tasks can compute indicators that influence subsequent task execution.
+- **Header**: Defines objects, methods, and expected input/output types, supporting complex interactions.
+- **Pipeline Library**: Contains pipelines as acyclic graph structures, with each phase allowing for recursive tasks based on defined observation schedules.
 
-### New Concepts
+### Syntax and Definitions
 
-#### Time Series and Vectorizable Objects
+An Ordo program is structured with phases and tasks. Tasks within a phase are defined as follows:
 
-- **Series Objects**: Any object can be transformed into a `Series<Object>`, a time-indexed sequence of a specific object type. Each `Series<Object>` expression can only include one `Series` per line, ensuring clarity.
-- **Vectorized Operations**: Certain objects support operations that apply over entire time series, enabling efficient computations without explicit loops.
+```
+result_name: object.method(input_1, input_2, ...)
+```
 
-#### Pipeline Definitions (Computational Graphs)
+where:
+- `result_name` is the output variable.
+- `object` is the instance or type.
+- `method` is the operation, with `input_1`, `input_2`, etc., as parameters.
 
-- **`pipelines` Section**: Define reusable pipelines that can be invoked within the main pipeline.
-- **Pipeline Invocation**: Use pipelines within tasks by invoking them as needed.
+### Variable Referencing and Scoping
 
-#### Conditional Execution
+Variables are scoped by phase, and accessible to subsequent phases unless redefined. Recursive pipelines can use `generateSequentialTask` for tasks that depend on prior executions.
 
-- **`conditional(indicator, task_if_true, task_if_false)`**: A primitive function that executes `task_if_true` if the `indicator` evaluates to true, otherwise executes `task_if_false`.
-
-#### Indicators
-
-- Tasks can compute indicators (boolean values or other metrics) that are used in decision-making for conditional execution.
-
-#### Scheduling
-
-- **`schedule` Property**: Specifies when or how often a task should execute. Can be a specific time, interval, or event.
-
-## Example Program with Strict `Series<Object>` Syntax
-
-Below is a self-consistent example that includes all class definitions, uses instances from previous phases, and demonstrates the new features while adhering to the one `Series<Object>` per line rule.
-
-### Header: Object and Method Definitions
-
-Each time-indexed sequence is represented as `Series<Object>`, with only one `Series` per line for clarity and consistency.
+### Example Header Definition
 
 ```plaintext
 header: {
-  ComputeEngine: {
-    getUniverse: String -> Universe,
-    getAllocation: String -> Allocation,
-    allocate: Universe, Allocation -> Allocation,
-    optimise: Allocation, Float -> Allocation,
-    value: Allocation -> Valuation,
-    risk: Universe -> RiskAnalysis,
-    backtest: Series<(Allocation, MarketData)> -> Series<BacktestResult>,
-    generateAllocationSeries: Pipeline, DateRange, Frequency -> Series<Allocation>
-  },
-  RiskAnalysis: {
-    getVar: _ -> Float,
-    computeRiskMetrics: Allocation -> RiskMetrics
-  },
   DataLoader: {
-    getUniverse: String -> Universe,
-    getAllocation: String -> Allocation,
-    loadMarketData: String, DateRange -> Series<MarketData>,
-    getMarketIndicator: String -> Series<Indicator>
+    getUniverseFromTickers: [String] -> Universe,
+    getStatistics: Universe, [String] -> EnrichedUniverse,
+    getSnapshot: Universe, [String] -> DataSnapshot,
+    getHistory: Universe, [String] -> HistoricalData
+  },
+  ComputeEngine: {
+    getEqualWeight: EnrichedUniverse -> Allocation,
+    calculatePerformance: BacktestAllocation -> PerformanceMetrics
+  },
+  Pipeline: {
+    generateSequentialTask: [DateTime], Pipeline -> BacktestAllocation
   },
   Orchestrator: {
-    rebalance: Allocation -> Allocation
+    getCurrentDate: _ -> DateTime,
+    getSchedule: DateTime, DateTime, String -> [DateTime],
+    finalizeReport: PerformanceMetrics -> Report
   },
-  Plotter: {
-    plotPerformance: Series<BacktestResult> -> Plot,
-    plotRiskMetrics: Series<RiskMetrics> -> Plot
+  BacktestAllocation: {
+    allocations: [Allocation],
+    dates: [DateTime]
   },
-  Scheduler: {
-    scheduleTask: Task, Schedule -> ScheduledTask
+  PerformanceMetrics: {
+    returns: Float,
+    volatility: Float,
+    drawdown: Float
   },
-  Series: {
-    sum: _ -> Series,
-    mean: _ -> Series,
-    diff: _ -> Series,
-    pctChange: _ -> Series,
-    resample: Frequency -> Series,
-    rolling: WindowSize -> Series,
-    apply: Function -> Series
+  Report: {
+    summary: String,
+    details: String
   }
 }
 ```
 
-### Instances
+### Example Pipeline with Sequential and Parallel Execution
+
+This example shows a backtesting pipeline with sequential rebalancing and final performance calculation.
 
 ```plaintext
-instances: {
-  data_loader: DataLoader,
-  compute_engine: ComputeEngine,
-  orchestrator: Orchestrator,
-  plotter: Plotter,
-  scheduler: Scheduler
-}
-```
+{
+  entryPoint: pipelineLibrary.COMPUTE,
+  rebalancingDate: orchestrator.getCurrentDate(),
 
-### Pipeline Definitions (Computational Graphs)
-
-This pipeline shows the `REBALANCING` process, using clear, type-specific sequences while conforming to the one `Series<Object>` per line rule.
-
-```plaintext
-pipelines: {
-  REBALANCING(universeName): [
-    {
-      phase1: {
-        universe: data_loader.getUniverse(universeName),
-        index: data_loader.getAllocation(universeName),
-        initialAllocation: compute_engine.allocate(universe, index),
-        riskAnalysis: compute_engine.risk(universe)
-      }
+  pipelineLibrary: {
+    MONTHLY_EQUAL_WEIGHT: {
+      observationTime: rebalancingDate,
+      universe: data_loader.getUniverseFromTickers([AAPL, GOOGLE]),
+      enrichedUniverse: data_loader.getStatistics(universe, [Price]),
+      targetAllocation: compute_engine.getEqualWeight(enrichedUniverse)
     },
-    {
-      phase2: {
-        riskVar: riskAnalysis.getVar(),
-        optimizedAllocation: compute_engine.optimise(initialAllocation, riskVar),
-        valuation: compute_engine.value(optimizedAllocation),
-        rebalanceTask: orchestrator.rebalance(optimizedAllocation)
-      }
+
+    BACKTEST: {
+      observationTime: rebalancingDate,
+      observationDates: orchestrator.getSchedule(2020-01-01, observationTime, monthly),
+      rebalancingResults: Pipeline.generateSequentialTask(observationDates, MONTHLY_EQUAL_WEIGHT)
+    },
+
+    COMPUTE: {
+      backtestResults: pipelineLibrary.BACKTEST.rebalancingResults,
+      performanceMetrics: compute_engine.calculatePerformance(backtestResults),
+      report: orchestrator.finalizeReport(performanceMetrics)
     }
-  ]
+  }
 }
 ```
 
-### Main Pipeline
+### Explanation of the Example
 
-In this main pipeline, the `Series<(Allocation, MarketData)>` structure is used to ensure that `backtest` respects the single `Series<Object>` rule.
+1. **Entry Point**: `entryPoint` specifies `pipelineLibrary.COMPUTE` as the main execution path.
+2. **MONTHLY_EQUAL_WEIGHT Pipeline**: Retrieves data for `AAPL` and `GOOGLE`, enriches it with the necessary statistics, and computes an equal-weight target allocation.
+3. **BACKTEST Pipeline**: Uses `generateSequentialTask` to apply `MONTHLY_EQUAL_WEIGHT` at each scheduled observation date. The sequential structure ensures that each step builds on the results of the previous date.
+4. **COMPUTE Pipeline**: Aggregates the backtest results, calculates performance metrics, and finalizes a report, providing a complete evaluation of the backtesting results.
 
-```plaintext
-pipeline: [
-  [
-    // BACK_TESTING Task - Sequential Phases
-    {
-      phase1: {
-        marketData: data_loader.loadMarketData("SP500", "2020-01-01 to 2023-01-01"),
-        allocationSeries: compute_engine.generateAllocationSeries(
-          REBALANCING("SP500"),
-          "2020-01-01 to 2023-01-01",
-          "Monthly"
-        ),
-        combinedSeries: allocationSeries.zip(marketData),  // Combine Allocation and MarketData into a single series
-        backtestResults: compute_engine.backtest(combinedSeries)
-      }
-    }
-  ],
-  [
-    // Time Series Operations and Analysis
-    {
-      phase2: {
-        returnsSeries: backtestResults.pctChange(),
-        cumulativeReturns: returnsSeries.cumsum(),
-        averageReturn: returnsSeries.mean(),
-        riskMetricsSeries: allocationSeries.apply(RiskAnalysis.computeRiskMetrics),
-        performancePlot: plotter.plotPerformance(cumulativeReturns),
-        riskPlot: plotter.plotRiskMetrics(riskMetricsSeries)
-      }
-    }
-  ]
-]
-```
+## Conclusion
 
-### Explanation of Updates
+Ordo is a structured language for defining acyclic task pipelines, supporting sequential and parallel execution with recursive capabilities. Its flexible, readable syntax makes it ideal for complex workflows that require efficient task management across phases.
 
-1. **Sequential and Parallel Execution**: The JSON format uses lists (`[]`) for sequential phases and objects (`{}`) for parallel tasks within a phase.
-
-2. **Single `Series<Object>` per Line**: Each function now adheres to the rule of only having one `Series<Object>` per line.
-
-3. **Combined Series for Backtesting**: To handle multiple inputs, we created a `Series<(Allocation, MarketData)>` by combining `Allocation` and `MarketData` into a tuple series with `zip`. This allows `backtest` to process both inputs within a single `Series` object.
-
-4. **Consistent `Series<Object>` Application**: All time-based sequences are expressed as `Series<Object>`, keeping the syntax streamlined and compliant with the framework’s structure.
-
-This design approach maintains clarity and ensures that all operations are syntactically correct while preserving OrdoLang's core principles.
+The Ordo Language Support extension in VS Code provides syntax highlighting, IntelliSense, and error-checking, streamlining the development and debugging of Ordo programs.

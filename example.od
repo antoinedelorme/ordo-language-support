@@ -1,28 +1,25 @@
-pipeline: [
-  {
-    // BACK_TESTING Task
-    phase1: {
-      marketData: data_loader.loadMarketData("SP500", "2020-01-01 to 2023-01-01"),
-      allocationSeries: compute_engine.generateAllocationSeries(
-        REBALANCING("SP500"),
-        "2020-01-01 to 2023-01-01",
-        "Monthly"
-      ),
-      backtestResults: compute_engine.backtest(
-        allocationSeries,
-        marketData
-      )
-    }
-  },
-  {
-    // Time Series Operations and Analysis
-    phase2: {
-      returnsSeries: backtestResults.pctChange(),
-      cumulativeReturns: returnsSeries.cumsum(),
-      averageReturn: returnsSeries.mean(),
-      riskMetricsSeries: allocationSeries.apply(RiskAnalysis.computeRiskMetrics),
-      performancePlot: plotter.plotPerformance(cumulativeReturns),
-      riskPlot: plotter.plotRiskMetrics(riskMetricsSeries)
+{
+  entryPoint: pipelineLibrary.COMPUTE,
+  rebalancingDate: orchestrator.getCurrentDate(),
+
+  pipelineLibrary: {
+    MONTHLY_EQUAL_WEIGHT: {
+      observationTime: rebalancingDate,
+      universe: data_loader.getUniverseFromTickers([AAPL, GOOGLE]),
+      enrichedUniverse: data_loader.getStatistics(universe, [Price]),
+      targetAllocation: compute_engine.getEqualWeight(enrichedUniverse)      
+    },
+
+    BACKTEST: {
+      observationTime: rebalancingDate,
+      observationDates: getSchedule(2020-01-01, observationTime, monthly),
+      rebalancingResults: orchestrator.generateParallelTask(observationDates, MONTHLY_EQUAL_WEIGHT)
+    },
+
+    COMPUTE: {
+      backtestResults: pipelineLibrary.BACKTEST.rebalancingResults,
+      performanceMetrics: compute_engine.calculatePerformance(backtestResults),
+      report: orchestrator.finalizeReport(performanceMetrics)
     }
   }
-]
+}
