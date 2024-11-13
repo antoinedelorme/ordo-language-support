@@ -1,33 +1,28 @@
-ComputeEngine: {
-  getUniverse: String -> Universe,
-  getTrackingError: Allocation, Index -> Float,
-  allocate: Universe, Index -> Allocation
-},
-Allocation: {
-  rank: _ -> Allocation,
-  topPercentile: Float -> Allocation,
-  merge: Allocation, Allocation -> Allocation
-},
-RiskManager: {
-  calculateVaR: Allocation -> Float,
-  analyzeRisk: Allocation, MarketData -> RiskReport
-}
-
-[
+pipeline: [
   {
+    // BACK_TESTING Task
     phase1: {
-      SP500: data_loader.getUniverse(SP500),
-      SP500Index: data_loader.getAllocation(SP500),
-      initialAllocation: compute_engine.allocate(SP500, SP500Index),
-      riskAnalysis: compute_engine.risk(SP500)
+      marketData: data_loader.loadMarketData("SP500", "2020-01-01 to 2023-01-01"),
+      allocationSeries: compute_engine.generateAllocationSeries(
+        REBALANCING("SP500"),
+        "2020-01-01 to 2023-01-01",
+        "Monthly"
+      ),
+      backtestResults: compute_engine.backtest(
+        allocationSeries,
+        marketData
+      )
     }
   },
   {
+    // Time Series Operations and Analysis
     phase2: {
-      riskVar: riskAnalysis.getVar(),
-      optimizedAllocation: compute_engine.optimise(initialAllocation, riskVar),
-      valuation: compute_engine.value(optimizedAllocation),
-      rebalanceTask: orchestrator.rebalance(optimizedAllocation)
+      returnsSeries: backtestResults.pctChange(),
+      cumulativeReturns: returnsSeries.cumsum(),
+      averageReturn: returnsSeries.mean(),
+      riskMetricsSeries: allocationSeries.apply(RiskAnalysis.computeRiskMetrics),
+      performancePlot: plotter.plotPerformance(cumulativeReturns),
+      riskPlot: plotter.plotRiskMetrics(riskMetricsSeries)
     }
   }
 ]

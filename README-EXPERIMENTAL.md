@@ -5,13 +5,13 @@
 
 ## Overview
 
-**OrdoLang** is an experimental programming language designed to specify complex task pipelines with sequential and parallel execution across multiple phases, all within an elegant JSON-like syntax. At its core, OrdoLang treats everything as a **time series**, enabling powerful and efficient manipulation of data over time. This time series perspective allows any object to be transformed into a `Series` object—a time-indexed sequence of objects—providing a unified framework for temporal data processing and analysis.
+**OrdoLang** is an experimental programming language designed to specify complex task pipelines with sequential and parallel execution across multiple phases, all within an elegant JSON-like syntax. At its core, OrdoLang treats everything as a **time series**, enabling powerful and efficient manipulation of data over time. This time series perspective allows any object to be transformed into a `Series<Object>`, where each `Series` represents a time-indexed sequence of specific objects. OrdoLang's strict syntax ensures that only one `Series<Object>` is used per line, maintaining clarity and consistency.
 
-**Note**: OrdoLang serves as a flexible, human-readable blueprint for designing task pipelines, adaptable to multiple programming languages. It offers a clear framework for defining objects, methods, and task sequencing, making it ideal for creating cross-functional pipeline blueprints that can be implemented across various systems.
+**Note**: OrdoLang serves as a flexible, human-readable blueprint for designing task pipelines, adaptable to multiple programming languages. It provides a clear framework for defining objects, methods, and task sequencing, making it ideal for creating cross-functional pipeline blueprints.
 
 ## Key Features
 
-- **Time Series-Centric**: All objects can be transformed into time series (`Series` objects), allowing for consistent and powerful time-based operations.
+- **Time Series-Centric**: All objects can be transformed into time series (`Series<Object>`), allowing for consistent and powerful time-based operations.
 - **Vectorizable Objects**: Certain objects support vectorized operations, enabling efficient computations over entire time series without explicit iteration.
 - **Sequential and Parallel Execution**: Structured task execution across sequential phases, with parallelism for tasks within each phase.
 - **Pipeline Definitions (Computational Graphs)**: Define reusable pipelines (graphs) that can be invoked within other tasks, similar to computational graphs in data processing frameworks.
@@ -28,7 +28,7 @@ An OrdoLang program is structured as a JSON-like array, where each element is a 
 - **Phases**: Execute sequentially from the first to the last in the array.
 - **Tasks**: Execute in parallel within each phase unless dependencies specify otherwise.
 - **Pipeline Definitions**: Reusable pipelines (graphs) can be defined and invoked within other tasks.
-- **Time Series Operations**: Objects can be transformed into `Series` objects, supporting vectorized operations over time.
+- **Time Series Operations**: Objects can be transformed into `Series<Object>`, supporting vectorized operations over time.
 - **Conditional Execution**: Implemented using the primitive `conditional(indicator, task_if_true, task_if_false)`.
 - **Scheduling**: Defined within tasks using a `schedule` property.
 - **Indicators**: Tasks can compute indicators that influence subsequent task execution.
@@ -37,7 +37,7 @@ An OrdoLang program is structured as a JSON-like array, where each element is a 
 
 #### Time Series and Vectorizable Objects
 
-- **Series Objects**: Any object can be transformed into a `Series`, a time-indexed sequence of objects.
+- **Series Objects**: Any object can be transformed into a `Series<Object>`, a time-indexed sequence of a specific object type. Each `Series<Object>` expression can only include one `Series` per line, ensuring clarity.
 - **Vectorized Operations**: Certain objects support operations that apply over entire time series, enabling efficient computations without explicit loops.
 
 #### Pipeline Definitions (Computational Graphs)
@@ -57,11 +57,13 @@ An OrdoLang program is structured as a JSON-like array, where each element is a 
 
 - **`schedule` Property**: Specifies when or how often a task should execute. Can be a specific time, interval, or event.
 
-## Example Program Incorporating Time Series and Vectorizable Objects
+## Example Program with Strict `Series<Object>` Syntax
 
-Below is a self-consistent example that includes all class definitions, uses instances from previous phases, and demonstrates the new features while maintaining the elegance of the JSON-like syntax.
+Below is a self-consistent example that includes all class definitions, uses instances from previous phases, and demonstrates the new features while adhering to the one `Series<Object>` per line rule.
 
 ### Header: Object and Method Definitions
+
+Each time-indexed sequence is represented as `Series<Object>`, with only one `Series` per line for clarity and consistency.
 
 ```plaintext
 header: {
@@ -72,25 +74,26 @@ header: {
     optimise: Allocation, Float -> Allocation,
     value: Allocation -> Valuation,
     risk: Universe -> RiskAnalysis,
-    backtest: AllocationSeries, MarketDataSeries -> BacktestResultSeries,
-    generateAllocationSeries: Pipeline, DateRange, Frequency -> AllocationSeries
+    // Backtesting function now takes a single series of tuples to conform to syntax rules
+    backtest: Series<(Allocation, MarketData)> -> Series<BacktestResult>,
+    generateAllocationSeries: Pipeline, DateRange, Frequency -> Series<Allocation>
   },
   RiskAnalysis: {
     getVar: _ -> Float,
-    computeRiskMetrics: AllocationSeries -> RiskMetricsSeries
+    computeRiskMetrics: Allocation -> RiskMetrics
   },
   DataLoader: {
     getUniverse: String -> Universe,
     getAllocation: String -> Allocation,
-    loadMarketData: String, DateRange -> MarketDataSeries,
-    getMarketIndicator: String -> IndicatorSeries
+    loadMarketData: String, DateRange -> Series<MarketData>,
+    getMarketIndicator: String -> Series<Indicator>
   },
   Orchestrator: {
     rebalance: Allocation -> Allocation
   },
   Plotter: {
-    plotPerformance: BacktestResultSeries -> Plot,
-    plotRiskMetrics: RiskMetricsSeries -> Plot
+    plotPerformance: Series<BacktestResult> -> Plot,
+    plotRiskMetrics: Series<RiskMetrics> -> Plot
   },
   Scheduler: {
     scheduleTask: Task, Schedule -> ScheduledTask
@@ -121,6 +124,8 @@ instances: {
 
 ### Pipeline Definitions (Computational Graphs)
 
+This pipeline shows the `REBALANCING` process, using clear, type-specific sequences while conforming to the one `Series<Object>` per line rule.
+
 ```plaintext
 pipelines: {
   REBALANCING(universeName): [
@@ -146,54 +151,43 @@ pipelines: {
 
 ### Main Pipeline
 
+In this main pipeline, the `Series<(Allocation, MarketData)>` structure is used to ensure that `backtest` respects the single `Series<Object>` rule.
+
 ```plaintext
 pipeline: [
   {
     // BACK_TESTING Task
     phase1: {
-      marketDataSeries: data_loader.loadMarketData("SP500", "2020-01-01 to 2023-01-01"),
+      marketData: data_loader.loadMarketData("SP500", "2020-01-01 to 2023-01-01"),
       allocationSeries: compute_engine.generateAllocationSeries(
         REBALANCING("SP500"),
         "2020-01-01 to 2023-01-01",
         "Monthly"
       ),
-      backtestResultSeries: compute_engine.backtest(allocationSeries, marketDataSeries)
+      combinedSeries: allocationSeries.zip(marketData),  // Combine Allocation and MarketData into a single series
+      backtestResults: compute_engine.backtest(combinedSeries)
     }
   },
   {
     // Time Series Operations and Analysis
     phase2: {
-      returnsSeries: backtestResultSeries.pctChange(),
-      cumulativeReturnsSeries: returnsSeries.cumsum(),
+      returnsSeries: backtestResults.pctChange(),
+      cumulativeReturns: returnsSeries.cumsum(),
       averageReturn: returnsSeries.mean(),
-      riskMetricsSeries: RiskAnalysis.computeRiskMetrics(allocationSeries),
-      performancePlot: plotter.plotPerformance(cumulativeReturnsSeries),
+      riskMetricsSeries: allocationSeries.apply(RiskAnalysis.computeRiskMetrics),
+      performancePlot: plotter.plotPerformance(cumulativeReturns),
       riskPlot: plotter.plotRiskMetrics(riskMetricsSeries)
     }
   }
 ]
 ```
 
-### Series Object and Methods
+### Explanation of Updates
 
-OrdoLang introduces the `Series` object with methods for temporal data analysis:
+1. **Single `Series<Object>` per Line**: Each function now adheres to the rule of only having one `Series<Object>` per line.
 
-- **Aggregation Methods**: `sum()`, `mean()`, `cumsum()` for cumulative sums and means.
-- **Transformation Methods**: `diff()`, `pctChange()`, `resample(frequency)`, `rolling(windowSize)`.
-- **Custom Functions**: `apply(function)` allows applying a custom function to each element or window in the series.
+2. **`backtest: Series<(Allocation, MarketData)> -> Series<BacktestResult>`**: To handle multiple inputs, we created a `Series<(Allocation, MarketData)>` by combining `Allocation` and `MarketData` into a tuple series with `zip`. This allows `backtest` to process both inputs within a single `Series` object.
 
-### Key Points
+3. **Consistent `Series<Object>` Application**: All time-based sequences are expressed as `Series<Object>`, keeping the syntax streamlined and compliant with the framework’s structure.
 
-- **Time Series-Centric Framework**: Focus on temporal data processing, enhancing consistency across workflows.
-- **Vectorizable Objects**: Efficient computations over entire time series.
-- **Pipeline Definitions**: Define reusable computational graphs that can be parameterized.
-- **Elegant Syntax**: JSON-like, concise, and maintainable.
-- **Dynamic Data Flow**: Context-aware, sequential and parallel processing.
-
-## Conclusion
-
-OrdoLang provides a powerful yet simple language for defining complex task pipelines, emphasizing a time-series perspective. It allows any object to be transformed into a `Series` object, supporting flexible and efficient workflows ideal for finance, trading systems, or any domain where temporal data is critical.
-
----
-
-**Note**: This framework is adaptable to various programming environments and does not depend on specific libraries. Vectorization refers to the capability of certain objects to support efficient operations over sequences.
+This design approach maintains clarity and ensures that all operations are syntactically correct while preserving OrdoLang's core principles.
