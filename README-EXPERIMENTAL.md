@@ -46,12 +46,12 @@ Variables are scoped by phase, and accessible to subsequent phases unless redefi
 header: {
   DataLoader: {
     getUniverseFromTickers: [String] -> Universe,
-    getStatistics: Universe, [String] -> EnrichedUniverse,
+    getStatistics: Universe, [String] -> Universe,
     getSnapshot: Universe, [String] -> DataSnapshot,
     getHistory: Universe, [String] -> HistoricalData
   },
   ComputeEngine: {
-    getEqualWeight: EnrichedUniverse -> Allocation,
+    getEqualWeight: Universe -> Allocation,
     calculatePerformance: BacktestAllocation -> PerformanceMetrics
   },
   Pipeline: {
@@ -98,7 +98,7 @@ This example shows a backtesting pipeline with sequential rebalancing and final 
     BACKTEST: {
       observationTime: rebalancingDate,
       observationDates: orchestrator.getSchedule(2020-01-01, observationTime, monthly),
-      rebalancingResults: Pipeline.generateSequentialTask(observationDates, MONTHLY_EQUAL_WEIGHT)
+      rebalancingResults: pipeline.generateSequentialTask(observationDates, MONTHLY_EQUAL_WEIGHT)
     },
 
     COMPUTE: {
