@@ -5,7 +5,7 @@
 
 ## Overview
 
-**OrdoLang** is an experimental programming language designed to specify complex task pipelines with sequential and parallel execution across multiple phases, all within an elegant JSON-like syntax. At its core, OrdoLang treats everything as a **time series**, enabling powerful and efficient manipulation of data over time. This time series perspective allows any object to be transformed into a `Series<Object>`, where each `Series` represents a time-indexed sequence of specific objects. OrdoLang's strict syntax ensures that only one `Series<Object>` is used per line, maintaining clarity and consistency.
+**OrdoLang** is an experimental programming language designed to specify complex task pipelines with sequential and parallel execution across multiple phases, all within a JSON-like syntax. OrdoLang’s JSON-based structure provides an intuitive way to organize workflows, where lists (`[]`) indicate **sequential execution** and objects (`{}`) allow **parallel execution** of tasks, automatically resolving dependencies within each phase. This design is ideal for time series-based applications where tasks require bo...
 
 **Note**: OrdoLang serves as a flexible, human-readable blueprint for designing task pipelines, adaptable to multiple programming languages. It provides a clear framework for defining objects, methods, and task sequencing, making it ideal for creating cross-functional pipeline blueprints.
 
@@ -13,7 +13,7 @@
 
 - **Time Series-Centric**: All objects can be transformed into time series (`Series<Object>`), allowing for consistent and powerful time-based operations.
 - **Vectorizable Objects**: Certain objects support vectorized operations, enabling efficient computations over entire time series without explicit iteration.
-- **Sequential and Parallel Execution**: Structured task execution across sequential phases, with parallelism for tasks within each phase.
+- **Sequential and Parallel Execution**: Structured task execution with sequential execution in lists (`[]`) and parallelism within objects (`{}`) in each phase.
 - **Pipeline Definitions (Computational Graphs)**: Define reusable pipelines (graphs) that can be invoked within other tasks, similar to computational graphs in data processing frameworks.
 - **Conditional Execution**: Tasks can be conditionally executed based on indicators or the results of other tasks, using the primitive `conditional` function within the JSON-like syntax.
 - **Indicators**: Compute indicators that influence execution flow, facilitating decision-making in workflows.
@@ -25,8 +25,8 @@
 
 An OrdoLang program is structured as a JSON-like array, where each element is a **phase** represented as an object with the phase name as the key.
 
-- **Phases**: Execute sequentially from the first to the last in the array.
-- **Tasks**: Execute in parallel within each phase unless dependencies specify otherwise.
+- **Phases**: Execute sequentially from the first to the last in the array (`[]`).
+- **Tasks**: Execute in parallel within each phase (`{}`) unless dependencies specify otherwise.
 - **Pipeline Definitions**: Reusable pipelines (graphs) can be defined and invoked within other tasks.
 - **Time Series Operations**: Objects can be transformed into `Series<Object>`, supporting vectorized operations over time.
 - **Conditional Execution**: Implemented using the primitive `conditional(indicator, task_if_true, task_if_false)`.
@@ -74,7 +74,6 @@ header: {
     optimise: Allocation, Float -> Allocation,
     value: Allocation -> Valuation,
     risk: Universe -> RiskAnalysis,
-    // Backtesting function now takes a single series of tuples to conform to syntax rules
     backtest: Series<(Allocation, MarketData)> -> Series<BacktestResult>,
     generateAllocationSeries: Pipeline, DateRange, Frequency -> Series<Allocation>
   },
@@ -155,39 +154,45 @@ In this main pipeline, the `Series<(Allocation, MarketData)>` structure is used 
 
 ```plaintext
 pipeline: [
-  {
-    // BACK_TESTING Task
-    phase1: {
-      marketData: data_loader.loadMarketData("SP500", "2020-01-01 to 2023-01-01"),
-      allocationSeries: compute_engine.generateAllocationSeries(
-        REBALANCING("SP500"),
-        "2020-01-01 to 2023-01-01",
-        "Monthly"
-      ),
-      combinedSeries: allocationSeries.zip(marketData),  // Combine Allocation and MarketData into a single series
-      backtestResults: compute_engine.backtest(combinedSeries)
+  [
+    // BACK_TESTING Task - Sequential Phases
+    {
+      phase1: {
+        marketData: data_loader.loadMarketData("SP500", "2020-01-01 to 2023-01-01"),
+        allocationSeries: compute_engine.generateAllocationSeries(
+          REBALANCING("SP500"),
+          "2020-01-01 to 2023-01-01",
+          "Monthly"
+        ),
+        combinedSeries: allocationSeries.zip(marketData),  // Combine Allocation and MarketData into a single series
+        backtestResults: compute_engine.backtest(combinedSeries)
+      }
     }
-  },
-  {
+  ],
+  [
     // Time Series Operations and Analysis
-    phase2: {
-      returnsSeries: backtestResults.pctChange(),
-      cumulativeReturns: returnsSeries.cumsum(),
-      averageReturn: returnsSeries.mean(),
-      riskMetricsSeries: allocationSeries.apply(RiskAnalysis.computeRiskMetrics),
-      performancePlot: plotter.plotPerformance(cumulativeReturns),
-      riskPlot: plotter.plotRiskMetrics(riskMetricsSeries)
+    {
+      phase2: {
+        returnsSeries: backtestResults.pctChange(),
+        cumulativeReturns: returnsSeries.cumsum(),
+        averageReturn: returnsSeries.mean(),
+        riskMetricsSeries: allocationSeries.apply(RiskAnalysis.computeRiskMetrics),
+        performancePlot: plotter.plotPerformance(cumulativeReturns),
+        riskPlot: plotter.plotRiskMetrics(riskMetricsSeries)
+      }
     }
-  }
+  ]
 ]
 ```
 
 ### Explanation of Updates
 
-1. **Single `Series<Object>` per Line**: Each function now adheres to the rule of only having one `Series<Object>` per line.
+1. **Sequential and Parallel Execution**: The JSON format uses lists (`[]`) for sequential phases and objects (`{}`) for parallel tasks within a phase.
 
-2. **`backtest: Series<(Allocation, MarketData)> -> Series<BacktestResult>`**: To handle multiple inputs, we created a `Series<(Allocation, MarketData)>` by combining `Allocation` and `MarketData` into a tuple series with `zip`. This allows `backtest` to process both inputs within a single `Series` object.
+2. **Single `Series<Object>` per Line**: Each function now adheres to the rule of only having one `Series<Object>` per line.
 
-3. **Consistent `Series<Object>` Application**: All time-based sequences are expressed as `Series<Object>`, keeping the syntax streamlined and compliant with the framework’s structure.
+3. **Combined Series for Backtesting**: To handle multiple inputs, we created a `Series<(Allocation, MarketData)>` by combining `Allocation` and `MarketData` into a tuple series with `zip`. This allows `backtest` to process both inputs within a single `Series` object.
+
+4. **Consistent `Series<Object>` Application**: All time-based sequences are expressed as `Series<Object>`, keeping the syntax streamlined and compliant with the framework’s structure.
 
 This design approach maintains clarity and ensures that all operations are syntactically correct while preserving OrdoLang's core principles.
