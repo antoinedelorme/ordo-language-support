@@ -103,7 +103,7 @@ The following example demonstrates a backtesting pipeline with sequential rebala
 
     BACKTEST: {
       observationTime: rebalancingDate,
-      observationDates: orchestrator.getSchedule(2020-01-01, observationTime, monthly),
+      observationDates: orchestrator.getSchedule('2020-01-01', observationTime, monthly),
       rebalancingResults: observationDates.map(observationDate | MONTHLY_EQUAL_WEIGHT)
     },
 
